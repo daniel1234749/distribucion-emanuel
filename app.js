@@ -300,8 +300,8 @@
 
     var rows = Array.from(selected.values()).map(function(p) {
       return '<tr>' +
-        '<td class="c-cod">'  + p.codigos   + '</td>' +
         '<td class="c-fam">'  + p.familia   + '</td>' +
+        '<td class="c-cod">'  + p.codigos   + '</td>' +
         '<td class="c-prod">' + p.productos + '</td>' +
         '<td class="c-num">'  + p.uxb       + '</td>' +
         '<td class="c-num ' + pnc(p.fair_vta)   + '">' + fmt(p.fair_vta)   + '</td>' +
@@ -322,7 +322,7 @@
       '<p class="print-date">Fecha: ' + new Date().toLocaleString('es-AR') + '</p>' +
       '<table>' +
       '<colgroup>' +
-      '  <col class="c-col-cod"><col class="c-col-fam"><col class="c-col-prod"><col class="c-col-num">' +
+      '  <col class="c-col-fam"><col class="c-col-cod"><col class="c-col-prod"><col class="c-col-num">' +
       '  <col class="c-col-num"><col class="c-col-num"><col class="c-col-num"><col class="c-col-num">' +
       '  <col class="c-col-stk"><col class="c-col-stk"><col class="c-col-stk"><col class="c-col-stk"><col class="c-col-stk"><col class="c-col-tot">' +
       '</colgroup>' +
@@ -330,18 +330,64 @@
       '<tr class="grp-row">' +
       '  <th colspan="4"></th>' +
       '  <th colspan="4" class="grp-vta">VENTAS</th>' +
-      '  <th colspan="5" class="grp-stk">STOCK</th><th class="grp-tot">TOTAL</th>' +
+      '  <th colspan="5" class="grp-stk">STOCK</th>' +
+      '  <th class="grp-tot">TOTAL</th>' +
       '</tr>' +
       '<tr>' +
-      '  <th class="c-cod">Codigo</th><th class="c-fam">Familia</th><th class="c-prod">Producto</th><th class="c-num">UXB</th>' +
+      '  <th class="c-fam">Familia</th><th class="c-cod">Codigo</th><th class="c-prod">Producto</th><th class="c-num">UXB</th>' +
       '  <th class="c-num">Fair</th><th class="c-num">Burza</th><th class="c-num">Korn</th><th class="c-num">Tucu</th>' +
       '  <th class="c-num c-stk">Fair</th><th class="c-num c-stk">Burza</th><th class="c-num c-stk">Korn</th><th class="c-num c-stk">Tucu</th><th class="c-num c-stk">CD</th>' +
+      '  <th class="c-num c-tot">Total</th>' +
       '</tr>' +
       '</thead>' +
       '<tbody>' + rows + '</tbody>' +
       '</table>';
 
     window.print();
+  }
+
+  /* =====================
+     EXPORT EXCEL
+  ===================== */
+  function doExcel() {
+    if (selected.size === 0) { alert('No hay productos seleccionados.'); return; }
+
+    var bom = '\uFEFF';
+    var sep = ';';
+    var headers = [
+      'Familia','Codigo','Producto','UXB',
+      'Vta Fair','Vta Burza','Vta Korn','Vta Tucu',
+      'St Fair','St Burza','St Korn','St Tucu','St CD',
+      'Total Stock'
+    ].join(sep);
+
+    var rows = Array.from(selected.values()).map(function(p) {
+      return [
+        p.familia, p.codigos, '"' + p.productos.replace(/"/g,'""') + '"',
+        fmtNum(p.uxb),
+        fmtNum(p.fair_vta),  fmtNum(p.burza_vta), fmtNum(p.korn_vta),  fmtNum(p.tucu_vta),
+        fmtNum(p.fair_stock),fmtNum(p.burza_stock),fmtNum(p.korn_stock),fmtNum(p.tucu_stock),fmtNum(p.cd_stock),
+        fmtNum(p.total_stock)
+      ].join(sep);
+    });
+
+    var csv = bom + headers + '\n' + rows.join('\n');
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    var fecha = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+    a.href     = url;
+    a.download = 'stock-ventas-' + fecha + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // Numero para CSV (coma decimal, sin separador de miles)
+  function fmtNum(n) {
+    if (n === 0 || n == null) return '0';
+    return String(n).replace('.', ',');
   }
 
   // Color class for print (p=black, zero=red, neg=red bold)
@@ -417,6 +463,7 @@
     });
 
     btnPrint.addEventListener('click', doPrint);
+    document.getElementById('btnExcel').addEventListener('click', doExcel);
   }
 
   /* =====================
