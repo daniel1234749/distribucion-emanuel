@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock & Ventas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-brand">
+      <span class="brand-icon">▣</span>
+      <div>
+        <div class="brand-name">STOCK <span>&amp;</span> VENTAS</div>
+        <div class="brand-sub">Sistema de gestión de productos</div>
+      </div>
+    </div>
+    <div class="header-meta">
+      <span class="last-update" id="lastUpdate">Última actualización: —</span>
+      <button class="btn-selected-toggle" id="btnVerSeleccionados">
+        <span class="icon">✓</span> Ver seleccionados <span class="badge" id="badgeCount">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- SEARCH & FILTERS -->
+  <div class="toolbar">
+    <div class="search-box">
+      <span class="search-icon">⌕</span>
+      <input
+        type="text"
+        id="searchInput"
+        class="search-input"
+        placeholder="Buscar por código, producto o familia..."
+        autocomplete="off"
+      />
+      <button class="clear-btn" id="clearSearch" title="Limpiar">✕</button>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Familia</label>
+      <select id="familiaFilter" class="filter-select">
+        <option value="">Todas</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Stock</label>
+      <select id="stockFilter" class="filter-select">
+        <option value="">Todos</option>
+        <option value="con_stock">Con stock</option>
+        <option value="sin_stock">Sin stock</option>
+        <option value="negativo">Stock negativo</option>
+      </select>
+    </div>
+
+    <div class="filter-stats">
+      <span id="filterStats">— productos</span>
+    </div>
+  </div>
+
+  <!-- MAIN TABLE -->
+  <div class="table-wrapper">
+    <table class="data-table" id="productsTable">
+      <thead>
+        <tr>
+          <th class="col-familia sortable" data-col="familia">Familia <span class="sort-icon">↕</span></th>
+          <th class="col-cod sortable" data-col="codigos">Cód <span class="sort-icon">↕</span></th>
+          <th class="col-producto sortable" data-col="productos">Producto <span class="sort-icon">↕</span></th>
+          <th class="col-num">UXB</th>
+          <th class="col-num">vta fair</th>
+          <th class="col-num">vta burza</th>
+          <th class="col-num">vta korn</th>
+          <th class="col-num">vta tucu</th>
+          <th class="col-num stock-col">stock fair</th>
+          <th class="col-num stock-col">stock burza</th>
+          <th class="col-num stock-col">stock korn</th>
+          <th class="col-num stock-col">stock tucu</th>
+          <th class="col-num stock-col">stock cd</th>
+          <th class="col-num col-total sortable" data-col="total_stock">Total Stk <span class="sort-icon">↕</span></th>
+          <th class="col-action">Elegir</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Rows rendered by JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SELECTED PANEL -->
+  <div class="selected-panel" id="selectedPanel">
+    <div class="panel-header">
+      <h2 class="panel-title">Productos Seleccionados <span class="badge" id="panelBadge">0</span></h2>
+      <div class="panel-actions">
+        <button class="btn-print" id="btnPrint">🖨 Imprimir</button>
+        <button class="btn-clear-all" id="btnClearAll">✕ Limpiar todo</button>
+        <button class="btn-close-panel" id="btnClosePanel">↓ Cerrar</button>
+      </div>
+    </div>
+    <div class="panel-body" id="panelBody">
+      <!-- Selected items rendered here -->
+    </div>
+  </div>
+
+  <!-- PRINT AREA (hidden) -->
+  <div id="printArea" class="print-area"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
