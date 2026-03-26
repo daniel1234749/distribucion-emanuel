@@ -769,3 +769,17 @@ td.total-stk.neg  { color: var(--red); background: var(--red-bg); font-weight: 7
   transition: background 0.15s;
 }
 .btn-excel:hover { background: #15803d; }
+
+/* Reporte Email button */
+.btn-reporte {
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-reporte:hover { background: #6d28d9; }

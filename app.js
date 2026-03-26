@@ -397,6 +397,225 @@
     return 'p-pos';
   }
 
+
+  /* =====================
+     REPORTE EMAIL
+  ===================== */
+  function doReporte() {
+    if (selected.size === 0) { alert('No hay productos seleccionados.'); return; }
+
+    var fecha   = new Date().toLocaleString('es-AR', { dateStyle:'full', timeStyle:'short' });
+    var fechaFN = new Date().toLocaleDateString('es-AR').replace(/\//g,'-');
+
+    var todos = Array.from(selected.values());
+
+    // ── Calculos para resumen ejecutivo ──────────────────────────────────────
+    var totalProds    = todos.length;
+    var sinStock      = todos.filter(function(p){ return p.total_stock <= 0; }).length;
+    var conNegativo   = todos.filter(function(p){
+      return [p.fair_stock,p.burza_stock,p.korn_stock,p.tucu_stock,p.cd_stock].some(function(s){ return s < 0; });
+    }).length;
+    var totalStockSum = todos.reduce(function(a,p){ return a + p.total_stock; }, 0);
+    var vtaTotalSum   = todos.reduce(function(a,p){ return a + p.fair_vta + p.burza_vta + p.korn_vta + p.tucu_vta; }, 0);
+
+    function fmtR(n) {
+      if (n === 0 || n == null) return '0,0';
+      return n.toLocaleString('es-AR', { minimumFractionDigits:1, maximumFractionDigits:2 });
+    }
+
+    function colorNum(n) {
+      if (n < 0)  return 'color:#b91c1c;font-weight:700';
+      if (n === 0) return 'color:#b91c1c;font-weight:700';
+      return 'color:#15803d;font-weight:700';
+    }
+
+    // ── Semaforo por total_stock ──────────────────────────────────────────────
+    function semaforo(p) {
+      if (p.total_stock < 0)  return { icon:'&#9679;', color:'#b91c1c', bg:'#fff5f5', label:'Negativo' };
+      if (p.total_stock === 0) return { icon:'&#9679;', color:'#b91c1c', bg:'#fff5f5', label:'Sin stock' };
+      if (p.total_stock < 10) return { icon:'&#9679;', color:'#d97706', bg:'#fffbeb', label:'Stock bajo' };
+      return { icon:'&#9679;', color:'#15803d', bg:'#ffffff', label:'OK' };
+    }
+
+    // ── Resumen ejecutivo ─────────────────────────────────────────────────────
+    var alertaHtml = '';
+    if (sinStock > 0) {
+      alertaHtml += '<div style="display:flex;align-items:center;gap:8px;background:#fff5f5;border-left:4px solid #b91c1c;padding:10px 14px;border-radius:4px;margin-bottom:8px">' +
+        '<span style="font-size:18px">&#9888;</span>' +
+        '<span style="font-size:12px;color:#7f1d1d;font-weight:600">' + sinStock + ' producto' + (sinStock!==1?'s':'') + ' SIN STOCK &mdash; requieren reposici&oacute;n urgente</span>' +
+        '</div>';
+    }
+    if (conNegativo > 0) {
+      alertaHtml += '<div style="display:flex;align-items:center;gap:8px;background:#fff5f5;border-left:4px solid #7c3aed;padding:10px 14px;border-radius:4px;margin-bottom:8px">' +
+        '<span style="font-size:18px">&#8595;</span>' +
+        '<span style="font-size:12px;color:#4c1d95;font-weight:600">' + conNegativo + ' producto' + (conNegativo!==1?'s':'') + ' con STOCK NEGATIVO &mdash; revisar registros</span>' +
+        '</div>';
+    }
+
+    var resumen = '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin-bottom:24px">' +
+      '<h2 style="margin:0 0 16px;font-size:14px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:.06em">Resumen Ejecutivo</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">' +
+        kpi('Productos analizados', totalProds, '#3b82f6', '#eff6ff', '#1e40af', '') +
+        kpi('Sin stock / negativos', sinStock,   '#b91c1c', '#fff5f5', '#7f1d1d', '') +
+        kpi('Total stock acumulado', fmtR(totalStockSum), '#15803d', '#f0fdf4', '#14532d', '') +
+        kpi('Rotaci&oacute;n venta total', fmtR(vtaTotalSum), '#7c3aed', '#faf5ff', '#4c1d95', '') +
+      '</div>' +
+      (alertaHtml ? '<div>' + alertaHtml + '</div>' : '') +
+    '</div>';
+
+    // ── Tablas por familia ────────────────────────────────────────────────────
+    var grupos = {};
+    todos.forEach(function(p) {
+      if (!grupos[p.familia]) grupos[p.familia] = [];
+      grupos[p.familia].push(p);
+    });
+
+    var TD  = 'padding:5px 8px;font-size:11px;text-align:center;border-bottom:1px solid #f1f5f9';
+    var TDL = 'padding:5px 8px;font-size:11px;border-bottom:1px solid #f1f5f9';
+    var TH  = 'padding:5px 8px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:center;border-bottom:1px solid #e2e8f0;color:#64748b;background:#f8fafc';
+    var THL = 'padding:5px 8px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;text-align:left;border-bottom:1px solid #e2e8f0;color:#64748b;background:#f8fafc';
+
+    var tablas = Object.keys(grupos).sort().map(function(familia) {
+      var prods = grupos[familia];
+
+      // totales de la familia
+      var totFair  = prods.reduce(function(a,p){ return a+p.fair_stock; },0);
+      var totBurza = prods.reduce(function(a,p){ return a+p.burza_stock; },0);
+      var totKorn  = prods.reduce(function(a,p){ return a+p.korn_stock; },0);
+      var totTucu  = prods.reduce(function(a,p){ return a+p.tucu_stock; },0);
+      var totCD    = prods.reduce(function(a,p){ return a+p.cd_stock; },0);
+      var totTotal = prods.reduce(function(a,p){ return a+p.total_stock; },0);
+      var totVFair = prods.reduce(function(a,p){ return a+p.fair_vta; },0);
+      var totVBurz = prods.reduce(function(a,p){ return a+p.burza_vta; },0);
+      var totVKorn = prods.reduce(function(a,p){ return a+p.korn_vta; },0);
+      var totVTucu = prods.reduce(function(a,p){ return a+p.tucu_vta; },0);
+
+      var filas = prods.map(function(p) {
+        var sem = semaforo(p);
+        var rowBg = sem.bg !== '#ffffff' ? 'background:' + sem.bg + ';' : '';
+        return '<tr style="' + rowBg + 'border-bottom:1px solid #f1f5f9">' +
+          '<td style="' + TDL + ';width:14px;text-align:center"><span style="color:' + sem.color + ';font-size:10px" title="' + sem.label + '">' + sem.icon + '</span></td>' +
+          '<td style="' + TDL + ';font-size:11px;color:#475569;font-weight:600;white-space:nowrap">' + p.codigos + '</td>' +
+          '<td style="' + TDL + ';font-size:11px;color:#0f172a;font-weight:700;max-width:200px">' + p.productos + '</td>' +
+          '<td style="' + TD  + ';color:#334155">' + p.uxb + '</td>' +
+          '<td style="' + TD  + ';' + colorNum(p.fair_vta)   + '">' + fmtR(p.fair_vta)   + '</td>' +
+          '<td style="' + TD  + ';' + colorNum(p.burza_vta)  + '">' + fmtR(p.burza_vta)  + '</td>' +
+          '<td style="' + TD  + ';' + colorNum(p.korn_vta)   + '">' + fmtR(p.korn_vta)   + '</td>' +
+          '<td style="' + TD  + ';' + colorNum(p.tucu_vta)   + '">' + fmtR(p.tucu_vta)   + '</td>' +
+          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.fair_stock)   + '">' + fmtR(p.fair_stock)   + '</td>' +
+          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.burza_stock)  + '">' + fmtR(p.burza_stock)  + '</td>' +
+          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.korn_stock)   + '">' + fmtR(p.korn_stock)   + '</td>' +
+          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.tucu_stock)   + '">' + fmtR(p.tucu_stock)   + '</td>' +
+          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.cd_stock)     + '">' + fmtR(p.cd_stock)     + '</td>' +
+          '<td style="' + TD  + ';background:#fef9e7;font-size:12px;font-weight:800;color:' + (p.total_stock>0?'#14532d':'#b91c1c') + '">' + fmtR(p.total_stock) + '</td>' +
+          '</tr>';
+      }).join('');
+
+      // fila totales
+      var TF = 'padding:6px 8px;font-size:11px;font-weight:700;text-align:center;background:#1e293b;color:#fff;border-top:2px solid #334155';
+      var filaTotal = '<tr>' +
+        '<td style="' + TF + ';text-align:left" colspan="4">TOTAL FAMILIA</td>' +
+        '<td style="' + TF + ';color:' + (totVFair>0?'#86efac':'#fca5a5') + '">'  + fmtR(totVFair)  + '</td>' +
+        '<td style="' + TF + ';color:' + (totVBurz>0?'#86efac':'#fca5a5') + '">'  + fmtR(totVBurz)  + '</td>' +
+        '<td style="' + TF + ';color:' + (totVKorn>0?'#86efac':'#fca5a5') + '">'  + fmtR(totVKorn)  + '</td>' +
+        '<td style="' + TF + ';color:' + (totVTucu>0?'#86efac':'#fca5a5') + '">'  + fmtR(totVTucu)  + '</td>' +
+        '<td style="' + TF + ';color:' + (totFair>0?'#86efac':'#fca5a5')  + '">'  + fmtR(totFair)   + '</td>' +
+        '<td style="' + TF + ';color:' + (totBurza>0?'#86efac':'#fca5a5') + '">'  + fmtR(totBurza)  + '</td>' +
+        '<td style="' + TF + ';color:' + (totKorn>0?'#86efac':'#fca5a5')  + '">'  + fmtR(totKorn)   + '</td>' +
+        '<td style="' + TF + ';color:' + (totTucu>0?'#86efac':'#fca5a5')  + '">'  + fmtR(totTucu)   + '</td>' +
+        '<td style="' + TF + ';color:' + (totCD>0?'#86efac':'#fca5a5')    + '">'  + fmtR(totCD)     + '</td>' +
+        '<td style="background:#0f172a;padding:6px 8px;font-size:13px;font-weight:900;text-align:center;color:' + (totTotal>0?'#22d07a':'#f87171') + ';border-top:2px solid #334155">' + fmtR(totTotal) + '</td>' +
+        '</tr>';
+
+      return '<div style="margin-bottom:20px">' +
+        '<div style="background:#1e293b;color:#fff;padding:7px 14px;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:10px">' +
+          '<span style="font-size:13px;font-weight:700;letter-spacing:.04em">' + familia + '</span>' +
+          '<span style="background:#334155;color:#94a3b8;font-size:10px;padding:2px 8px;border-radius:10px">' + prods.length + ' producto' + (prods.length!==1?'s':'') + '</span>' +
+        '</div>' +
+        '<table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid #e2e8f0;border-top:none">' +
+        '<thead>' +
+        '<tr>' +
+          '<th style="' + TH + ';width:14px"></th>' +
+          '<th style="' + THL + '">C&oacute;d</th>' +
+          '<th style="' + THL + '">Descripci&oacute;n del Producto</th>' +
+          '<th style="' + TH + '">UXB</th>' +
+          '<th colspan="4" style="' + TH + ';color:#2563eb;border-bottom:2px solid #3b82f6">ROTACI&Oacute;N / VENTAS</th>' +
+          '<th colspan="5" style="' + TH + ';color:#15803d;background:#f0f7ee;border-bottom:2px solid #16a34a">AN&Aacute;LISIS DE INVENTARIO</th>' +
+          '<th style="' + TH + ';color:#b45309;background:#fef9e7;border-bottom:2px solid #d97706">TOTAL</th>' +
+        '</tr>' +
+        '<tr>' +
+          '<th style="' + TH + '"></th>' +
+          '<th style="' + TH + '"></th>' +
+          '<th style="' + TH + '"></th>' +
+          '<th style="' + TH + '"></th>' +
+          '<th style="' + TH + '">Fair</th><th style="' + TH + '">Burza</th><th style="' + TH + '">Korn</th><th style="' + TH + '">Tucu</th>' +
+          '<th style="' + TH + ';background:#f0f7ee">Fair</th><th style="' + TH + ';background:#f0f7ee">Burza</th><th style="' + TH + ';background:#f0f7ee">Korn</th><th style="' + TH + ';background:#f0f7ee">Tucu</th><th style="' + TH + ';background:#f0f7ee">CD</th>' +
+          '<th style="' + TH + ';background:#fef9e7"></th>' +
+        '</tr>' +
+        '</thead>' +
+        '<tbody>' + filas + filaTotal + '</tbody>' +
+        '</table></div>';
+    }).join('');
+
+    // ── HTML final ────────────────────────────────────────────────────────────
+    var html = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<title>Informe de Gesti&oacute;n de Inventario - ' + fechaFN + '</title>' +
+      '<style>' +
+        '*{box-sizing:border-box}' +
+        'body{margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif}' +
+        '.wrap{max-width:1000px;margin:0 auto;padding:20px}' +
+        '.header{background:#0f172a;color:#fff;border-radius:10px;padding:18px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}' +
+        '.header-left h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em}' +
+        '.header-left h1 span{color:#22d07a}' +
+        '.header-left p{margin:3px 0 0;font-size:11px;color:#94a3b8}' +
+        '.header-right{text-align:right}' +
+        '.badge-total{background:#1e293b;color:#22d07a;border:1px solid #22d07a33;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;display:inline-block}' +
+        '.fecha{color:#64748b;font-size:10px;margin-top:5px}' +
+        '.footer{text-align:center;color:#94a3b8;font-size:10px;margin-top:20px;padding-top:12px;border-top:1px solid #e2e8f0}' +
+        '@media print{' +
+          'body{background:#fff}' +
+          '.wrap{padding:0}' +
+          '.header{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+          'div[style*="background:#1e293b"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+          'tr[style]{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+          '@page{size:A4 landscape;margin:6mm}' +
+        '}' +
+      '</style></head><body>' +
+      '<div class="wrap">' +
+        '<div class="header">' +
+          '<div class="header-left">' +
+            '<h1>STOCK <span>&amp;</span> VENTAS</h1>' +
+            '<p>Informe de Gesti&oacute;n de Inventario &mdash; Distribuci&oacute;n Emanuel</p>' +
+          '</div>' +
+          '<div class="header-right">' +
+            '<div class="badge-total">' + totalProds + ' producto' + (totalProds!==1?'s':'') + ' analizados</div>' +
+            '<div class="fecha">' + fecha + '</div>' +
+          '</div>' +
+        '</div>' +
+        resumen +
+        tablas +
+        '<div class="footer">Informe generado autom&aacute;ticamente &mdash; Sistema Stock &amp; Ventas &mdash; ' + fecha + '</div>' +
+      '</div></body></html>';
+
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'informe-inventario-' + fechaFN + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function kpi(label, value, color, bg, textColor, unit) {
+    return '<div style="background:' + bg + ';border:1px solid ' + color + '33;border-radius:8px;padding:14px 16px;text-align:center">' +
+      '<div style="font-size:22px;font-weight:800;color:' + textColor + '">' + value + unit + '</div>' +
+      '<div style="font-size:10px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.05em">' + label + '</div>' +
+    '</div>';
+  }
+
   /* =====================
      EVENTS
   ===================== */
@@ -464,6 +683,7 @@
 
     btnPrint.addEventListener('click', doPrint);
     document.getElementById('btnExcel').addEventListener('click', doExcel);
+    document.getElementById('btnReporte').addEventListener('click', doReporte);
   }
 
   /* =====================
