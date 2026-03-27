@@ -502,12 +502,12 @@
           '<td style="' + TD  + ';' + colorNum(p.burza_vta)  + '">' + fmtR(p.burza_vta)  + '</td>' +
           '<td style="' + TD  + ';' + colorNum(p.korn_vta)   + '">' + fmtR(p.korn_vta)   + '</td>' +
           '<td style="' + TD  + ';' + colorNum(p.tucu_vta)   + '">' + fmtR(p.tucu_vta)   + '</td>' +
-          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.fair_stock)   + '">' + fmtR(p.fair_stock)   + '</td>' +
-          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.burza_stock)  + '">' + fmtR(p.burza_stock)  + '</td>' +
-          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.korn_stock)   + '">' + fmtR(p.korn_stock)   + '</td>' +
-          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.tucu_stock)   + '">' + fmtR(p.tucu_stock)   + '</td>' +
-          '<td style="' + TD  + ';background:#f0f7ee;' + colorNum(p.cd_stock)     + '">' + fmtR(p.cd_stock)     + '</td>' +
-          '<td style="' + TD  + ';background:#fef9e7;font-size:12px;font-weight:800;color:' + (p.total_stock>0?'#14532d':'#b91c1c') + '">' + fmtR(p.total_stock) + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#f0f7ee;cursor:pointer;' + colorNum(p.fair_stock)   + '" title="Clic para ver detalle">' + fmtR(p.fair_stock)   + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#f0f7ee;cursor:pointer;' + colorNum(p.burza_stock)  + '" title="Clic para ver detalle">' + fmtR(p.burza_stock)  + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#f0f7ee;cursor:pointer;' + colorNum(p.korn_stock)   + '" title="Clic para ver detalle">' + fmtR(p.korn_stock)   + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#f0f7ee;cursor:pointer;' + colorNum(p.tucu_stock)   + '" title="Clic para ver detalle">' + fmtR(p.tucu_stock)   + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#f0f7ee;cursor:pointer;' + colorNum(p.cd_stock)     + '" title="Clic para ver detalle">' + fmtR(p.cd_stock)     + '</td>' +
+          '<td class="inv-cell" style="' + TD  + ';background:#fef9e7;font-size:12px;font-weight:800;cursor:pointer;color:' + (p.total_stock>0?'#14532d':'#b91c1c') + '" title="Clic para ver detalle">' + fmtR(p.total_stock) + '</td>' +
           '</tr>';
       }).join('');
 
@@ -580,7 +580,27 @@
           'div[style*="background:#1e293b"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
           'tr[style]{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
           '@page{size:A4 landscape;margin:6mm}' +
+          '.modal-overlay{display:none!important}' +
         '}' +
+        '.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)}' +
+        '.modal-overlay.active{display:flex}' +
+        '.modal-box{background:#fff;border-radius:14px;padding:32px 36px;min-width:340px;max-width:520px;width:90%;box-shadow:0 25px 60px rgba(0,0,0,.35);animation:modalIn .2s ease}' +
+        '@keyframes modalIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}' +
+        '.modal-close{position:absolute;top:14px;right:18px;background:none;border:none;font-size:22px;color:#94a3b8;cursor:pointer;line-height:1}' +
+        '.modal-close:hover{color:#0f172a}' +
+        '.modal-title{font-size:13px;font-weight:800;color:#0f172a;text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}' +
+        '.modal-prod{font-size:15px;font-weight:700;color:#1e293b;margin:0 0 20px;line-height:1.3}' +
+        '.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}' +
+        '.modal-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px}' +
+        '.modal-item.neg{background:#fff5f5;border-color:#fecaca}' +
+        '.modal-item.ok{background:#f0fdf4;border-color:#bbf7d0}' +
+        '.modal-dep{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}' +
+        '.modal-val{font-size:26px;font-weight:800;line-height:1}' +
+        '.modal-val.pos{color:#15803d}' +
+        '.modal-val.neg{color:#b91c1c}' +
+        '.modal-total{margin-top:14px;background:#0f172a;border-radius:8px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}' +
+        '.modal-total-lbl{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em}' +
+        '.modal-total-val{font-size:28px;font-weight:900}' +
       '</style></head><body>' +
       '<div class="wrap">' +
         '<div class="header">' +
@@ -596,7 +616,46 @@
         resumen +
         tablas +
         '<div class="footer">Informe generado autom&aacute;ticamente &mdash; Sistema Stock &amp; Ventas &mdash; ' + fecha + '</div>' +
-      '</div></body></html>';
+      '</div>' +
+      '<div class="modal-overlay" id="invModal">' +
+        '<div class="modal-box" style="position:relative">' +
+          '<button class="modal-close" onclick="document.getElementById(\"invModal\").classList.remove(\"active\")">&times;</button>' +
+          '<p class="modal-title">An&aacute;lisis de Inventario</p>' +
+          '<p class="modal-prod" id="modalProd"></p>' +
+          '<div class="modal-grid" id="modalGrid"></div>' +
+          '<div class="modal-total">' +
+            '<span class="modal-total-lbl">Total Stock</span>' +
+            '<span class="modal-total-val" id="modalTotal"></span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<script>' +
+        'document.addEventListener("click",function(e){' +
+          'var cell=e.target.closest(".inv-cell");' +
+          'if(!cell)return;' +
+          'var row=cell.closest("tr");' +
+          'if(!row)return;' +
+          'var cells=row.querySelectorAll("td");' +
+          'var prod=cells[2]?cells[2].textContent.trim():"";' +
+          'var deps=["Fair","Burza","Korn","Tucu","CD"];' +
+          'var vals=[cells[8],cells[9],cells[10],cells[11],cells[12]].map(function(c){return c?parseFloat(c.textContent.replace(/\\./g,"").replace(",","."))||0:0;});' +
+          'var total=cells[13]?parseFloat(cells[13].textContent.replace(/\\./g,"").replace(",","."))||0:0;' +
+          'document.getElementById("modalProd").textContent=prod;' +
+          'var grid="";' +
+          'deps.forEach(function(d,i){' +
+            'var v=vals[i];var cls=v>0?"ok":"neg";var vcls=v>0?"pos":"neg";' +
+            'grid+="<div class=\"modal-item "+cls+"\"><div class=\"modal-dep\">"+ d +"</div><div class=\"modal-val "+vcls+"\">"+ v.toLocaleString(\"es-AR\",{minimumFractionDigits:1,maximumFractionDigits:2}) +"</div></div>";' +
+          '});' +
+          'document.getElementById("modalGrid").innerHTML=grid;' +
+          'var tv=document.getElementById("modalTotal");' +
+          'tv.textContent=total.toLocaleString("es-AR",{minimumFractionDigits:1,maximumFractionDigits:2});' +
+          'tv.style.color=total>0?"#22d07a":"#f87171";' +
+          'document.getElementById("invModal").classList.add("active");' +
+        '});' +
+        'document.getElementById("invModal").addEventListener("click",function(e){if(e.target===this)this.classList.remove("active");});' +
+        'document.addEventListener("keydown",function(e){if(e.key==="Escape")document.getElementById("invModal").classList.remove("active");});' +
+      '</script>' +
+      '</body></html>';
 
     var blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
     var url  = URL.createObjectURL(blob);
