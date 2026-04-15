@@ -540,8 +540,8 @@
           '<th style="' + THL + '">Descripci&oacute;n del Producto</th>' +
           '<th style="' + TH + '">UXB</th>' +
           '<th colspan="4" style="' + TH + ';color:#2563eb;border-bottom:2px solid #3b82f6">ROTACI&Oacute;N / VENTAS</th>' +
-          '<th colspan="5" style="' + TH + ';color:#15803d;background:#f0f7ee;border-bottom:2px solid #16a34a">AN&Aacute;LISIS DE INVENTARIO</th>' +
-          '<th style="' + TH + ';color:#b45309;background:#fef9e7;border-bottom:2px solid #d97706">TOTAL</th>' +
+          '<th colspan="5" class="inv-zone-header" style="' + TH + ';color:#15803d;background:#f0f7ee;border-bottom:2px solid #16a34a;cursor:zoom-in" title="Clic en cualquier celda para ampliar">AN&Aacute;LISIS DE INVENTARIO &nbsp;&#128269;</th>' +
+          '<th class="inv-zone-header" style="' + TH + ';color:#b45309;background:#fef9e7;border-bottom:2px solid #d97706;cursor:zoom-in" title="Clic para ampliar">TOTAL</th>' +
         '</tr>' +
         '<tr>' +
           '<th style="' + TH + '"></th>' +
@@ -582,6 +582,10 @@
           '@page{size:A4 landscape;margin:6mm}' +
           '.modal-overlay{display:none!important}' +
         '}' +
+        '.inv-cell{transition:background .15s,transform .1s;cursor:zoom-in!important}' +
+        '.inv-cell:hover{filter:brightness(.93);transform:scale(1.07);z-index:2;position:relative;box-shadow:0 2px 12px rgba(0,0,0,.18)}' +
+        '.inv-zone-header{cursor:zoom-in}' +
+        '.inv-zone-header:hover{background:#d1fae5!important;transition:background .15s}' +
         '.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)}' +
         '.modal-overlay.active{display:flex}' +
         '.modal-box{background:#fff;border-radius:14px;padding:32px 36px;min-width:340px;max-width:520px;width:90%;box-shadow:0 25px 60px rgba(0,0,0,.35);animation:modalIn .2s ease}' +
